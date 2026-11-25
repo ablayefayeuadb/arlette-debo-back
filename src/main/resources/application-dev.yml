@@ -1,0 +1,28 @@
+# Profil de développement local — NE PAS utiliser en production.
+spring:
+  datasource:
+    password: ${DB_PASSWORD:arlette_dev}
+
+app:
+  crypto:
+    # Clé de développement uniquement (Base64, 256 bits). En production : CRYPTO_KEY.
+    key: ${CRYPTO_KEY:ZGV2LW9ubHktYXJsZXR0ZS1kZWJvLWFlcy0yNTYtYml0cy1taW4hISE=}
+  pointage:
+    secret: ${POINTAGE_SECRET:dev-only-cle-pointage-qr-arlette-debo-0123456789}
+  security:
+    expose-api-docs: true
+    public-api-url: ${PUBLIC_API_URL:http://localhost:8080}
+    # Clé de développement uniquement (Base64, 256 bits). En production : variable JWT_SECRET.
+    jwt:
+      secret: ${JWT_SECRET:ZGV2LW9ubHktYXJsZXR0ZS1kZWJvLWp3dC1zZWNyZXQtMjU2LWJpdHMtbWluIQ==}
+    refresh-cookie:
+      secure: false   # HTTP en local
+  seed:
+    enabled: ${SEED_ENABLED:true}
+    demo: ${SEED_DEMO:true}
+    default-password: ${SEED_PASSWORD:Arlette@2026}
+    force-password-change: false
+
+logging:
+  level:
+    sn.arlettedebo: debug

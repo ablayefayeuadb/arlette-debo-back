@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/arlette_debo_test}
+    username: ${TEST_DB_USER:arlette}
+    password: ${TEST_DB_PASSWORD:arlette_dev}
+  flyway:
+    clean-disabled: false   # base de test recréée à chaque exécution (voir TestDatabaseConfig)
+
+app:
+  public-app-url: https://arlettedebo.sn
+  sms:
+    enabled: false
+  pointage:
+    secret: test-only-cle-pointage-qr-arlette-debo-0123456789
+  security:
+    expose-api-docs: true
+    jwt:
+      secret: dGVzdC1vbmx5LWFybGV0dGUtZGViby1qd3Qtc2VjcmV0LTI1Ni1iaXRzIQ==
+    login:
+      max-per-ip-per-minute: 10000
+    refresh-cookie:
+      secure: false
+  storage:
+    root: ${java.io.tmpdir}/arlette-test-storage
+  seed:
+    enabled: true
+    default-password: Arlette@2026
+    force-password-change: false
+    creneaux-en-ligne: false
+
+logging:
+  level:
+    sn.arlettedebo: info
+    org.springframework.modulith: warn

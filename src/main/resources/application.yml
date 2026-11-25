@@ -1,0 +1,182 @@
+spring:
+  application:
+    name: arlette-debo-platform
+  profiles:
+    default: dev
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/arlette_debo}
+    username: ${DB_USER:arlette}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 5000
+      pool-name: arlette-pool
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # le schéma est la propriété exclusive de Flyway
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        default_batch_fetch_size: 32
+        query:
+          in_clause_parameter_padding: true
+          fail_on_pagination_over_collection_fetch: true
+          plan_cache_max_size: 512
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+  jackson:
+    default-property-inclusion: non_null
+    # Jackson 3 : les options de dates ont quitté SerializationFeature pour DateTimeFeature.
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+      # Jackson 3 refuse par défaut un champ primitif absent (boolean, int) : comportement Jackson 2 conservé
+      # (valeur par défaut du type), sinon toute requête omettant un champ optionnel primitif serait rejetée en 400.
+      fail-on-null-for-primitives: false
+    time-zone: Africa/Dakar
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  cache:
+    type: caffeine
+    cache-names: droits,referentiels,referentiels-checklist
+    caffeine:
+      spec: maximumSize=5000,expireAfterWrite=10m,recordStats
+  mvc:
+    problemdetails:
+      enabled: true
+  web:
+    # Boot 4 : anciennement server.error.* (aucun message ni trace technique dans les réponses d'erreur).
+    error:
+      include-message: never
+      include-stacktrace: never
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 8000
+          timeout: 8000
+          writetimeout: 8000
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,application/problem+json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    mail:
+      enabled: false
+
+# Documentation OpenAPI : générée et servie uniquement si app.security.expose-api-docs=true (dev).
+springdoc:
+  api-docs:
+    enabled: ${app.security.expose-api-docs:false}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${app.security.expose-api-docs:false}
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    default-models-expand-depth: -1
+    display-request-duration: true
+    persist-authorization: true       # le jeton survit au rechargement de la page
+    try-it-out-enabled: true
+    filter: true
+    syntax-highlight:
+      theme: monokai
+    urls-primary-name: 0-tout
+  default-produces-media-type: application/json
+  show-actuator: false
+  writer-with-order-by-keys: true
+
+app:
+  public-app-url: ${PUBLIC_APP_URL:https://arlettedebo.sn}
+  # Redirige tous les destinataires SMTP vers ce domaine (ex. yopmail.com → manager@yopmail.com).
+  # Vide = adresse métier telle quelle. À retirer à l’ouverture officielle.
+  mail:
+    rewrite-domain: ${MAIL_REWRITE_DOMAIN:yopmail.com}
+  # Chiffrement au repos (AES-GCM) — hors base. openssl rand -base64 32
+  crypto:
+    key: ${CRYPTO_KEY:}
+  sms:
+    enabled: ${AT_ENABLED:false}
+    username: ${AT_USERNAME:sandbox}
+    api-key: ${AT_API_KEY:}
+    sender-id: ${AT_SENDER_ID:}
+    base-url: ${AT_BASE_URL:https://api.sandbox.africastalking.com}
+  pointage:
+    # Clé HMAC de signature des QR de pointage (≥ 32 caractères) — fournie par l'environnement.
+    secret: ${POINTAGE_SECRET:}
+  security:
+    expose-api-docs: false
+    # URL publique de l'API pour Swagger « Try it out » (ex. http://149.56.45.75:8080). Vide = serveur courant.
+    public-api-url: ${PUBLIC_API_URL:}
+    cors-allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+    jwt:
+      issuer: arlette-debo-platform
+      audience: arlette-debo-front
+      secret: ${JWT_SECRET:}
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+    login:
+      max-attempts: 5
+      lock-duration: 15m
+      max-per-ip-per-minute: 30
+    refresh-cookie:
+      name: ad_refresh
+      path: /api/v1/auth   # cookie envoyé uniquement aux routes d'authentification
+      secure: true
+      same-site: Strict
+  # Justificatifs : dossier du serveur (en production, répertoire de l'hôte monté dans le conteneur)
+  storage:
+    root: ${STORAGE_ROOT:./var/storage}
+  # Dumps Postgres (OPS-04) — monté en lecture seule sur le VPS
+  backup:
+    dir: ${BACKUP_DIR:./var/backups}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+    demo: ${SEED_DEMO:false}
+    default-password: ${SEED_PASSWORD:}
+    force-password-change: true
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    sn.arlettedebo: info

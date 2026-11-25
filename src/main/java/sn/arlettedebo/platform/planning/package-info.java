@@ -1,0 +1,8 @@
+/**
+ * Module « Planning & rendez-vous ». Seuls les types publics de ce package forment son API ;
+ * les sous-packages {@code internal} sont privés au module (vérifié par Spring Modulith).
+ */
+@ApplicationModule(displayName = "Planning & rendez-vous")
+package sn.arlettedebo.platform.planning;
+
+import org.springframework.modulith.ApplicationModule;

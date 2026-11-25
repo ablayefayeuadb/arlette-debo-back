@@ -1,0 +1,44 @@
+# Production : tous les secrets viennent de l'environnement ; démarrage refusé s'ils manquent.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+app:
+  public-app-url: ${PUBLIC_APP_URL:https://arlettedebo.sn}
+  mail:
+    rewrite-domain: ${MAIL_REWRITE_DOMAIN:yopmail.com}
+  crypto:
+    key: ${CRYPTO_KEY}
+  sms:
+    enabled: ${AT_ENABLED:false}
+    username: ${AT_USERNAME:sandbox}
+    api-key: ${AT_API_KEY:}
+    sender-id: ${AT_SENDER_ID:}
+    base-url: ${AT_BASE_URL:https://api.sandbox.africastalking.com}
+  pointage:
+    secret: ${POINTAGE_SECRET}
+  security:
+    # Swagger / OpenAPI : désactivé par défaut en prod ; activer avec EXPOSE_API_DOCS=true (staging).
+    expose-api-docs: ${EXPOSE_API_DOCS:false}
+    public-api-url: ${PUBLIC_API_URL:}
+    cors-allowed-origins: ${CORS_ORIGINS}
+    jwt:
+      secret: ${JWT_SECRET}
+    refresh-cookie:
+      secure: ${COOKIE_SECURE:true}
+  storage:
+    root: ${STORAGE_ROOT}
+  backup:
+    dir: ${BACKUP_DIR:/opt/arlette-debo/backups}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+    demo: ${SEED_DEMO:false}
+    default-password: ${SEED_PASSWORD:}
+    force-password-change: ${SEED_FORCE_PASSWORD_CHANGE:true}
+
+management:
+  endpoint:
+    health:
+      show-details: never

@@ -1,0 +1,47 @@
+# Déploiement : PostgreSQL 16 + API. Les justificatifs sont écrits dans un dossier du serveur (STORAGE_DIR),
+# monté dans le conteneur : ils restent sur le serveur si le conteneur est recréé. Préparer le dossier une fois :
+#   sudo ./scripts/install-stockage.sh Les secrets viennent d'un fichier .env (jamais commité).
+#   cp .env.example .env && éditer && docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: arlette_debo
+      POSTGRES_USER: ${DB_USER:?DB_USER manquant}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD manquant}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d arlette_debo"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/arlette_debo
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant (openssl rand -base64 48)}
+      POINTAGE_SECRET: ${POINTAGE_SECRET:?POINTAGE_SECRET manquant (openssl rand -base64 48)}
+      CRYPTO_KEY: ${CRYPTO_KEY:?CRYPTO_KEY manquant (openssl rand -base64 32)}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS manquant}
+      STORAGE_ROOT: /data/storage
+      # Swagger (staging) : EXPOSE_API_DOCS=true + PUBLIC_API_URL=https://vps-…/api ou http://IP:8080
+      EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-false}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    volumes:
+      # Dossier du serveur (hors conteneur), propriété de l'utilisateur 10001 du conteneur
+      - ${STORAGE_DIR:-/srv/arlette-debo/justificatifs}:/data/storage
+    ports:
+      - "127.0.0.1:8080:8080"   # exposé via le reverse proxy nginx de l'hôte uniquement
+
+volumes:
+  pgdata:

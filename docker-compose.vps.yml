@@ -1,0 +1,57 @@
+# Déploiement VPS : API seule, PostgreSQL déjà installé sur l'hôte.
+# Usage :
+#   cp .env.example .env   # puis renseigner
+#   docker compose -f docker-compose.vps.yml up -d --build
+services:
+  api:
+    build: .
+    container_name: arlette-debo-api
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: ${DB_URL:-jdbc:postgresql://host.docker.internal:5432/arlette_debo}
+      DB_USER: ${DB_USER:?DB_USER manquant}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD manquant}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant}
+      POINTAGE_SECRET: ${POINTAGE_SECRET:?POINTAGE_SECRET manquant}
+      CRYPTO_KEY: ${CRYPTO_KEY:?CRYPTO_KEY manquant}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS manquant}
+      STORAGE_ROOT: /data/storage
+      EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-true}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://149.56.45.75:8080}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://arlettedebo.sn}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_REWRITE_DOMAIN: ${MAIL_REWRITE_DOMAIN:-yopmail.com}
+      AT_ENABLED: ${AT_ENABLED:-false}
+      AT_USERNAME: ${AT_USERNAME:-sandbox}
+      AT_API_KEY: ${AT_API_KEY:-}
+      # Vide = shortcode AT. Un alphanumérique non validé provoque InvalidSenderId.
+      AT_SENDER_ID: ${AT_SENDER_ID-}
+      AT_BASE_URL: ${AT_BASE_URL:-https://api.sandbox.africastalking.com}
+      SEED_ENABLED: ${SEED_ENABLED:-true}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+      SEED_FORCE_PASSWORD_CHANGE: ${SEED_FORCE_PASSWORD_CHANGE:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      BACKUP_DIR: ${BACKUP_DIR:-/backups}
+    volumes:
+      - ${STORAGE_DIR:-/srv/arlette-debo/justificatifs}:/data/storage
+      - ${BACKUP_HOST_DIR:-/opt/arlette-debo/backups}:/backups:ro
+    ports:
+      - "8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/liveness"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
